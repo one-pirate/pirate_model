@@ -1,1 +1,4 @@
 venv
+mlruns
+best_model
+__pycache__
