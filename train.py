@@ -7,6 +7,8 @@ import mlflow.sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+from xgboost import XGBClassifier
+from lightgbm import LGBMClassifier
 
 from sklearn.metrics import (
     accuracy_score,
@@ -172,6 +174,79 @@ with mlflow.start_run(run_name="LogisticRegression"):
         best_model = lr
         best_score = metrics["f1"]
         best_name = "LogisticRegression"
+
+
+# ------------------------------------------------------------
+# MODEL 3 : XGBOOST
+# ------------------------------------------------------------
+with mlflow.start_run(run_name="XGBoost"):
+    print("\n[INFO] Training XGBoost...")
+
+    xgb = XGBClassifier(
+        n_estimators=300,
+        max_depth=5,
+        learning_rate=0.05,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        random_state=42,
+        eval_metric="logloss"
+    )
+
+    xgb.fit(X_train, y_train)
+
+    metrics = evaluate_model("XGBoost", xgb, X_test, y_test)
+
+    mlflow.log_params({
+        "model": "XGBoost",
+        "n_estimators": 300,
+        "max_depth": 5,
+        "learning_rate": 0.05
+    })
+    mlflow.log_metrics(metrics)
+    mlflow.sklearn.log_model(xgb, "model")
+
+    results["XGBoost"] = metrics
+
+    if metrics["f1"] > best_score:
+        best_model = xgb
+        best_score = metrics["f1"]
+        best_name = "XGBoost"
+
+
+# ------------------------------------------------------------
+# MODEL 4 : LightGBM
+# ------------------------------------------------------------
+
+with mlflow.start_run(run_name="LightGBM"):
+    print("\n[INFO] Training LightGBM...")
+
+    lgbm = LGBMClassifier(
+        n_estimators=300,
+        max_depth=-1,
+        learning_rate=0.05,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        random_state=42
+    )
+
+    lgbm.fit(X_train, y_train)
+
+    metrics = evaluate_model("LightGBM", lgbm, X_test, y_test)
+
+    mlflow.log_params({
+        "model": "LightGBM",
+        "n_estimators": 300,
+        "learning_rate": 0.05
+    })
+    mlflow.log_metrics(metrics)
+    mlflow.sklearn.log_model(lgbm, "model")
+
+    results["LightGBM"] = metrics
+
+    if metrics["f1"] > best_score:
+        best_model = lgbm
+        best_score = metrics["f1"]
+        best_name = "LightGBM"
 
 
 # ============================================================
