@@ -3,6 +3,8 @@ import numpy as np
 import sys
 import mlflow
 import mlflow.sklearn
+import os
+import shutil
 
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
@@ -95,7 +97,7 @@ print(f"[INFO] Training size: {len(X_train)}, Test size: {len(X_test)}")
 # ============================================================
 # 4 MLflow SETUP
 # ============================================================
-
+mlflow.set_tracking_uri("file:./mlruns")  # Tracking to stock runs, models...
 mlflow.set_experiment("piracy_detection")
 print("[INFO] MLflow experiment: piracy_detection")
 
@@ -135,7 +137,7 @@ with mlflow.start_run(run_name="RandomForest"):
     print("\n[INFO] Training RandomForest...")
 
     rf = RandomForestClassifier(
-        n_estimators=200, random_state=42
+        n_estimators=500, random_state=10
     )
     rf.fit(X_train, y_train)
 
@@ -254,6 +256,10 @@ with mlflow.start_run(run_name="LightGBM"):
 # ============================================================
 
 print(f"\n[INFO] Best model is: {best_name} (F1={best_score:.4f})")
+
+if os.path.exists("best_model"):
+    print("[INFO] Removing old best_model/ ...")
+    shutil.rmtree("best_model")
 
 mlflow.sklearn.save_model(best_model, "best_model")
 
