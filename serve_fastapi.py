@@ -104,26 +104,34 @@ def root():
 
 @app.post("/explain")
 def explain(point: AttackInput):
-    X = np.array([[point.latitude, point.longitude]])
+    X = pd.DataFrame([{
+        "longitude": point.longitude,
+        "latitude": point.latitude
+    }])
 
     shap_values = explainer.shap_values(X)
+
+    # For binary classification, shap_values is a list of 2 arrays (one for each class)
+    # We return the shap values for the positive class (class 1)
+    shap_values_for_class_1 = shap_values[1] if isinstance(shap_values, list) and len(shap_values) > 1 else shap_values
+
+    # expected_value can also be a list for binary classification
+    expected_value_for_class_1 = explainer.expected_value[1] if isinstance(explainer.expected_value, list) and len(explainer.expected_value) > 1 else explainer.expected_value
 
     return {
         "input": {
             "latitude": point.latitude,
             "longitude": point.longitude
         },
-        # Valeur moyenne de la prédiction du modèle sans features
-        # (baseline utilisée pour expliquer l'écart de la prédiction)
         "expected_value": (
-            explainer.expected_value.tolist()
-            if hasattr(explainer.expected_value, "tolist")
-            else explainer.expected_value
+            expected_value_for_class_1.tolist()
+            if hasattr(expected_value_for_class_1, "tolist")
+            else expected_value_for_class_1
         ),
-        # Valeurs SHAP expliquant l'impact de chaque feature sur la prédiction finale
         "shap_values": (
-            shap_values.tolist()
-            if hasattr(shap_values, "tolist")
-            else shap_values
-        )
+            shap_values_for_class_1.tolist()
+            if hasattr(shap_values_for_class_1, "tolist")
+            else shap_values_for_class_1
+        ),
+        "feature_names": X.columns.tolist()
     }
